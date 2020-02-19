@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 import pyda
 
 # Period of data assimilation
+# NT_ASM = 1000
 NT_ASM = 400
 # Period of prediction
+# NT_PRD = 1000
 NT_PRD = 400
 # Interval of observation
 OBS_INTERVAL = 40
@@ -39,27 +41,46 @@ class Model:
                          (1.0 - self.PARAM_C * self.dt / self.PARAM_M) * self.v[it - 1]
 
     def output(self, interval: int) -> tuple:
-        return self.t[::interval], self.x[::interval], self.v[::interval]
+        t = np.copy(self.t[::interval])
+        x = np.copy(self.x[::interval])
+        v = np.copy(self.v[::interval])
+        return t, x, v
 
 
 class DA:
     def __init__(self) -> None:
-        pass
+        # Observation error covariance matrix
+        self.R = np.zeros((1, 1), dtype=np.float64)
+        self.R[0, 0] = 0.1
 
 
 if __name__ == '__main__':
+    # Pre procedure
+    da = DA()
+    np.random.seed(0)
+
+    # True Field
     mdl_t = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=5.0, v_0=0.0)
     mdl_t.predict()
-    t, x_t, v_t = mdl_t.output(OUTPUT_INTERVAL)
+    t_t, x_t, v_t = mdl_t.output(OUTPUT_INTERVAL)
 
+    # Observations
+    #   generate observation by adding Gaussian noise (uniform random number) to true value
+    t_obs, x_obs, _ = mdl_t.output(OBS_INTERVAL)
+    gnoise = np.sqrt(da.R[0, 0]) * np.random.randn(len(t_obs))
+    x_obs += gnoise
+
+    # Echo
     print('******* x ********')
-    for i in range(len(t)):
-        print('{0:7.2f}{1:10.3f}'.format(t[i], x_t[i]))
-
+    for i in range(len(t_t)):
+        print('{0:7.2f}{1:10.3f}'.format(t_t[i], x_t[i]))
     print()
     print('******* v ********')
-    for i in range(len(t)):
-        print('{0:7.2f}{1:10.3f}'.format(t[i], v_t[i]))
+    for i in range(len(t_t)):
+        print('{0:7.2f}{1:10.3f}'.format(t_t[i], v_t[i]))
 
-    plt.plot(x_t, v_t)
+    # Plot
+    plt.plot(t_t, x_t, label='True')
+    plt.plot(t_obs, x_obs, label='Observation')
+    plt.legend(loc='best')
     plt.show()
