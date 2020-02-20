@@ -178,16 +178,16 @@ if __name__ == '__main__':
         f.write('\n')
 
     # プロット: x
-    plt.plot(t_t  , x_t  , color='k', marker='.', label='True')
-    plt.plot(t_obs, x_obs, color='b', marker='.', label='Observation')
+    plt.plot(t_t  , x_t  , color='k', marker='.', label='True'           )
+    plt.plot(obs.t, obs.x, color='b', marker='.', label='Observation'    )
     plt.plot(t_s  , x_s  , color='g', marker='.', label='No Assimilation')
-    plt.plot(t_da , x_da , color='r', marker='.', label='Assimilation')
+    plt.plot(t_da , x_da , color='r', marker='.', label='Assimilation'   )
     plt.legend(loc='best')
     plt.show()
 
     # プロット: v
-    plt.plot(t_t , v_t , color='k', marker='.', label='True')
+    plt.plot(t_t , v_t , color='k', marker='.', label='True'           )
     plt.plot(t_s , v_s , color='g', marker='.', label='No Assimilation')
-    plt.plot(t_da, v_da, color='r', marker='.', label='Assimilation')
+    plt.plot(t_da, v_da, color='r', marker='.', label='Assimilation'   )
     plt.legend(loc='best')
     plt.show()
