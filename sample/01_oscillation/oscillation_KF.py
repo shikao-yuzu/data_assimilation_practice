@@ -64,23 +64,38 @@ if __name__ == '__main__':
     mdl_t.predict()
     t_t, x_t, v_t = mdl_t.output(OUTPUT_INTERVAL)
 
+    # Simulation run without DA (wrong initial value)
+    mdl_s = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=4.0, v_0=1.0)
+    mdl_s.predict()
+    t_s, x_s, v_s = mdl_s.output(OUTPUT_INTERVAL)
+
     # Observations
     #   generate observation by adding Gaussian noise (uniform random number) to true value
     t_obs, x_obs, _ = mdl_t.output(OBS_INTERVAL)
     gnoise = np.sqrt(da.R[0, 0]) * np.random.randn(len(t_obs))
     x_obs += gnoise
 
-    # Echo
+    # Echo: x
     print('******* x ********')
     for i in range(len(t_t)):
         print('{0:7.2f}{1:10.3f}'.format(t_t[i], x_t[i]))
     print()
+
+    # Echo: v
     print('******* v ********')
     for i in range(len(t_t)):
         print('{0:7.2f}{1:10.3f}'.format(t_t[i], v_t[i]))
+    print()
 
-    # Plot
-    plt.plot(t_t, x_t, label='True')
-    plt.plot(t_obs, x_obs, label='Observation')
+    # Plot: x
+    plt.plot(t_t  , x_t  , color='k', label='True')
+    plt.plot(t_obs, x_obs, color='b', label='Observation')
+    plt.plot(t_s  , x_s  , color='g', label='No Assimilation')
+    plt.legend(loc='best')
+    plt.show()
+
+    # Plot: v
+    plt.plot(t_t, v_t, color='k', label='True')
+    plt.plot(t_s, v_s, color='g', label='No Assimilation')
     plt.legend(loc='best')
     plt.show()
