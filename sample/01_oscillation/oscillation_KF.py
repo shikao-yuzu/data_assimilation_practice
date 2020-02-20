@@ -130,19 +130,20 @@ if __name__ == '__main__':
     mdl_da.predict(NT_ASM+1, NT_ASM+NT_PRD)
     t_da, x_da, v_da = mdl_da.output(OUTPUT_INTERVAL)
 
-    # Echo: x
-    print('******* x ********')
-    print(' [Time]   [True]  [No Assim]  [Assim]')
-    for i in range(len(t_t)):
-        print('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], x_t[i], x_s[i], x_da[i]))
-    print()
+    # File output
+    with open('result.txt', mode='wt', encoding='cp932') as f:
+        f.write('******* x ********')
+        f.write(' [Time]   [True]  [No Assim]  [Assim]')
+        for i in range(len(t_t)):
+            f.write('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], x_t[i], x_s[i], x_da[i]))
+        f.write('')
 
-    # Echo: v
-    print('******* v ********')
-    print(' [Time]   [True]  [No Assim]  [Assim]')
-    for i in range(len(t_t)):
-        print('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], v_t[i], v_s[i], v_da[i]))
-    print()
+        # Echo: v
+        f.write('******* v ********')
+        f.write(' [Time]   [True]  [No Assim]  [Assim]')
+        for i in range(len(t_t)):
+            f.write('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], v_t[i], v_s[i], v_da[i]))
+        f.write('')
 
     # Plot: x
     plt.plot(t_t  , x_t  , color='k', marker='.', label='True')
