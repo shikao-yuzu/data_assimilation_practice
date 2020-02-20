@@ -23,19 +23,18 @@ class Model:
     PARAM_K = 0.5
 
     def __init__(self, nt: int, dt: float, x_0: float, v_0: float) -> None:
-        self.nt = nt
         self.dt = dt
 
-        self.t = np.arange(0.0, (self.nt+1)*self.dt, self.dt)
-        self.x = np.zeros(self.nt+1, dtype=np.float64)
-        self.v = np.zeros(self.nt+1, dtype=np.float64)
+        self.t = np.arange(0.0, (nt+1)*self.dt, self.dt)
+        self.x = np.zeros(nt+1, dtype=np.float64)
+        self.v = np.zeros(nt+1, dtype=np.float64)
 
         self.x[0] = x_0
         self.v[0] = v_0
 
-    def predict(self) -> None:
+    def predict(self, nt_start: int, nt_end: int) -> None:
         # Forward euler scheme
-        for it in range(1, self.nt+1):
+        for it in range(nt_start, nt_end+1):
             self.x[it] = self.x[it-1] + self.dt * self.v[it-1]
             self.v[it] = - (self.PARAM_K * self.dt / self.PARAM_M) * self.x[it - 1] + \
                          (1.0 - self.PARAM_C * self.dt / self.PARAM_M) * self.v[it - 1]
@@ -61,13 +60,8 @@ if __name__ == '__main__':
 
     # True Field
     mdl_t = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=5.0, v_0=0.0)
-    mdl_t.predict()
+    mdl_t.predict(1, NT_ASM+NT_PRD)
     t_t, x_t, v_t = mdl_t.output(OUTPUT_INTERVAL)
-
-    # Simulation run without DA (wrong initial value)
-    mdl_s = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=4.0, v_0=1.0)
-    mdl_s.predict()
-    t_s, x_s, v_s = mdl_s.output(OUTPUT_INTERVAL)
 
     # Observations
     #   generate observation by adding Gaussian noise (uniform random number) to true value
@@ -75,27 +69,41 @@ if __name__ == '__main__':
     gnoise = np.sqrt(da.R[0, 0]) * np.random.randn(len(t_obs))
     x_obs += gnoise
 
+    # Simulation run without DA (wrong initial value)
+    mdl_s = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=4.0, v_0=1.0)
+    mdl_s.predict(1, NT_ASM+NT_PRD)
+    t_s, x_s, v_s = mdl_s.output(OUTPUT_INTERVAL)
+
+    # Simulation run with DA (wrong initial value)
+    mdl_da = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=4.0, v_0=1.0)
+    mdl_da.predict(1, NT_ASM+NT_PRD)
+    t_da, x_da, v_da = mdl_da.output(OUTPUT_INTERVAL)
+
     # Echo: x
     print('******* x ********')
+    print(' [Time]   [True]  [No Assim]  [Assim]')
     for i in range(len(t_t)):
-        print('{0:7.2f}{1:10.3f}'.format(t_t[i], x_t[i]))
+        print('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], x_t[i], x_s[i], x_da[i]))
     print()
 
     # Echo: v
     print('******* v ********')
+    print(' [Time]   [True]  [No Assim]  [Assim]')
     for i in range(len(t_t)):
-        print('{0:7.2f}{1:10.3f}'.format(t_t[i], v_t[i]))
+        print('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], v_t[i], v_s[i], v_da[i]))
     print()
 
     # Plot: x
     plt.plot(t_t  , x_t  , color='k', label='True')
     plt.plot(t_obs, x_obs, color='b', label='Observation')
     plt.plot(t_s  , x_s  , color='g', label='No Assimilation')
+    plt.plot(t_da , x_da , color='r', label='Assimilation')
     plt.legend(loc='best')
     plt.show()
 
     # Plot: v
-    plt.plot(t_t, v_t, color='k', label='True')
-    plt.plot(t_s, v_s, color='g', label='No Assimilation')
+    plt.plot(t_t , v_t , color='k', label='True')
+    plt.plot(t_s , v_s , color='g', label='No Assimilation')
+    plt.plot(t_da, v_da, color='r', label='Assimilation')
     plt.legend(loc='best')
     plt.show()
