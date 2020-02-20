@@ -48,7 +48,8 @@ class Model:
         v = np.copy(self.v[::interval])
         return t, x, v
 
-    def get_M_matrix(self) -> np.ndarray:
+    def get_m_matrix(self) -> np.ndarray:
+        # 状態遷移行列[M]
         M = np.zeros((2, 2), dtype=np.float64)
         M[0, 0] = 1.0
         M[0, 1] = self.dt
@@ -57,12 +58,24 @@ class Model:
         return M
 
 
+class Observation:
+    def __init__(self, R: np.ndarray, H: np.ndarray, t: np.ndarray, x: np.ndarray) -> None:
+        self.R = np.copy(R)
+        self.H = np.copy(H)
+        self.t = np.copy(t)
+        self.x = np.copy(x)
+
+        # generate observation by adding Gaussian noise (uniform random number) to true value
+        np.random.seed(0)
+        gnoise = np.sqrt(self.R[0, 0]) * np.random.randn(len(self.t))
+        self.x += gnoise
+
+
 class DA:
     def __init__(self, mdl: Model) -> None:
         self.mdl = mdl
 
-    def assimilation_KF(self, it_start: int, it_end: int, obs: np.ndarray, R: np.ndarray, H: np.ndarray,
-                        obs_interval: int) -> None:
+    def assimilation_KF(self, it_start: int, it_end: int, obs: Observation) -> None:
         # Pf initial
         Pf = np.zeros((2, 2), dtype=np.float64)
         Pf[0, 0] = 1.0
@@ -73,28 +86,28 @@ class DA:
             self.mdl.predict_one_step(it)
 
             # State Transient Matrix
-            M = self.mdl.get_M_matrix()
+            M = self.mdl.get_m_matrix()
 
             # Lyapunov equation: Obtain Pf
             Pf = M * Pf * M.transpose()
 
-            if it % obs_interval == 0:
-                # Kalman gain: Weighting of model result and obs.
-                #   Obsevation only in x --> component 1(x) only
-                #   In this case, inverse matrix --> scalar inverse
-                Kg = np.zeros((2, 2), dtype=np.float64)
-                Kg[0, 0] = Pf[0, 0] / (R[0, 0] + Pf[0, 0])
-                Kg[1, 0] = Pf[1, 0] / (R[0, 0] + Pf[0, 0])
+            for it_obs, t_obs in enumerate(obs.t):
+                if self.mdl.t[it] == t_obs:
+                    # Kalman gain: Weighting of model result and obs.
+                    #   Observation only in x --> component 1(x) only
+                    #   In this case, inverse matrix --> scalar inverse
+                    Kg = np.zeros((2, 2), dtype=np.float64)
+                    Kg[0, 0] = Pf[0, 0] / (obs.R[0, 0] + Pf[0, 0])
+                    Kg[1, 0] = Pf[1, 0] / (obs.R[0, 0] + Pf[0, 0])
 
-                # Calculate innovation and correction
-                it_obs = int(it / obs_interval)
-                innov = obs[it_obs] - self.mdl.x[it]
-                self.mdl.x[it] = self.mdl.x[it] + Kg[0, 0] * innov
-                self.mdl.v[it] = self.mdl.v[it] + Kg[1, 0] * innov
+                    # Calculate innovation and correction
+                    innov = obs.x[it_obs] - self.mdl.x[it]
+                    self.mdl.x[it] = self.mdl.x[it] + Kg[0, 0] * innov
+                    self.mdl.v[it] = self.mdl.v[it] + Kg[1, 0] * innov
 
-                # Analysis error covariance matrix
-                Pa = Pf - Kg * H * Pf
-                Pf = Pa
+                    # Analysis error covariance matrix
+                    Pa = Pf - Kg * obs.H * Pf
+                    Pf = Pa
 
 
 if __name__ == '__main__':
@@ -112,11 +125,8 @@ if __name__ == '__main__':
     H[0, 0] = 1.0
 
     # Observations
-    #   generate observation by adding Gaussian noise (uniform random number) to true value
-    np.random.seed(0)
     t_obs, x_obs, _ = mdl_t.output(OBS_INTERVAL)
-    gnoise = np.sqrt(R[0, 0]) * np.random.randn(len(t_obs))
-    x_obs += gnoise
+    obs = Observation(R, H, t_obs, x_obs)
 
     # Simulation run without DA (wrong initial value)
     mdl_s = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=4.0, v_0=1.0)
@@ -126,7 +136,7 @@ if __name__ == '__main__':
     # Simulation run with DA (wrong initial value)
     mdl_da = Model(nt=NT_ASM+NT_PRD, dt=DT, x_0=4.0, v_0=1.0)
     da = DA(mdl_da)
-    da.assimilation_KF(1, NT_ASM, x_obs, R, H, OBS_INTERVAL)
+    da.assimilation_KF(1, NT_ASM, obs)
     mdl_da.predict(NT_ASM+1, NT_ASM+NT_PRD)
     t_da, x_da, v_da = mdl_da.output(OUTPUT_INTERVAL)
 
