@@ -128,6 +128,8 @@ class DA:
 
                     # 予報誤差共分散行列[Pf]の更新
                     Pf = Pa
+                    print(self.mdl.dt * it)
+                    print(Pa)
 
 
 if __name__ == '__main__':
