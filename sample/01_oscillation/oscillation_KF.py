@@ -132,18 +132,18 @@ if __name__ == '__main__':
 
     # File output
     with open('result.txt', mode='wt', encoding='cp932') as f:
-        f.write('******* x ********')
-        f.write(' [Time]   [True]  [No Assim]  [Assim]')
+        f.writelines('******* x ********\n')
+        f.write(' [Time]   [True]  [No Assim]  [Assim]\n')
         for i in range(len(t_t)):
-            f.write('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], x_t[i], x_s[i], x_da[i]))
-        f.write('')
+            f.write('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}\n'.format(t_t[i], x_t[i], x_s[i], x_da[i]))
+        f.write('\n')
 
         # Echo: v
-        f.write('******* v ********')
-        f.write(' [Time]   [True]  [No Assim]  [Assim]')
+        f.write('******* v ********\n')
+        f.write(' [Time]   [True]  [No Assim]  [Assim]\n')
         for i in range(len(t_t)):
-            f.write('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}'.format(t_t[i], v_t[i], v_s[i], v_da[i]))
-        f.write('')
+            f.write('{0:7.2f}{1:10.3f}{2:10.3f}{3:10.3f}\n'.format(t_t[i], v_t[i], v_s[i], v_da[i]))
+        f.write('\n')
 
     # Plot: x
     plt.plot(t_t  , x_t  , color='k', marker='.', label='True')
