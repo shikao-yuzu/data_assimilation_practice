@@ -14,6 +14,8 @@ OBS_INTERVAL = 40
 OUTPUT_INTERVAL = 20
 # 時間ステップ
 DT = 0.01
+# 出力ファイル名
+FNAME_OUT = 'result_KF.txt'
 
 
 class Model:
@@ -166,7 +168,7 @@ if __name__ == '__main__':
     t_da, x_da, v_da = mdl_da.output(OUTPUT_INTERVAL)
 
     # ファイル出力
-    with open('result.txt', mode='wt', encoding='cp932') as f:
+    with open(FNAME_OUT, mode='wt', encoding='cp932') as f:
         f.writelines('******* x ********\n')
         f.write(' [Time]   [True]  [No Assim]  [Assim]\n')
         for i in range(len(t_t)):
