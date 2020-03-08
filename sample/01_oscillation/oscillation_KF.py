@@ -77,6 +77,10 @@ class Observation:
     def __init__(self, R: np.ndarray, H: np.ndarray, t: np.ndarray, x: np.ndarray) -> None:
         self.R = np.copy(R)  # 観測誤差共分散行列[R] <No x No>
         self.H = np.copy(H)  # 観測行列[H] <No x Nx>
+
+        # self.t = np.array( [0.40, 0.80, 1.20, 1.60, 2.00, 2.40, 2.80, 3.20, 3.60, 4.00] )
+        # self.x = np.array( [4.511,  3.882,  3.544,  2.413,  1.187, -0.011,  0.144, -1.317, -1.681, -2.510] )
+
         self.t = np.copy(t)  # 時刻t
         self.x = np.copy(x)  # 変位x
 
