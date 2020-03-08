@@ -78,14 +78,14 @@ class Observation:
         self.R = np.copy(R)  # 観測誤差共分散行列[R] <No x No>
         self.H = np.copy(H)  # 観測行列[H] <No x Nx>
 
-        # self.t = np.array( [0.40, 0.80, 1.20, 1.60, 2.00, 2.40, 2.80, 3.20, 3.60, 4.00] )
-        # self.x = np.array( [4.511,  3.882,  3.544,  2.413,  1.187, -0.011,  0.144, -1.317, -1.681, -2.510] )
+        self.t = np.array( [0.40, 0.80, 1.20, 1.60, 2.00, 2.40, 2.80, 3.20, 3.60, 4.00] )
+        self.x = np.array( [5.229, 4.000, 3.971, 2.513, 1.432, 0.819, -0.197, -1.323, -1.824, -1.737] )
 
-        self.t = np.copy(t)  # 時刻t
-        self.x = np.copy(x)  # 変位x
-
-        # 真値に正規乱数による誤差を加えて観測値を生成
-        self.x += np.sqrt(self.R[0, 0]) * np.random.randn(len(self.t))
+        # self.t = np.copy(t)  # 時刻t
+        # self.x = np.copy(x)  # 変位x
+        #
+        # # 真値に正規乱数による誤差を加えて観測値を生成
+        # self.x += np.sqrt(self.R[0, 0]) * np.random.randn(len(self.t))
 
 
 class DA:
@@ -110,13 +110,13 @@ class DA:
             M = self.mdl.get_m_matrix()
 
             # リアプノフ方程式: 予報誤差共分散行列[Pf]の時間発展
-            Pf = M * Pf * M.transpose()
+            Pf = M @ Pf @ M.T
 
             # 解析値と同一時刻の観測値を検索して同化
             for it_obs, t_obs in enumerate(obs.t):
                 if self.mdl.t[it] == t_obs:
                     # カルマンゲイン[K] <Nx x No>
-                    Kg = np.zeros((2, 2), dtype=np.float64)
+                    Kg = np.zeros((2, 1), dtype=np.float64)
                     Kg[0, 0] = Pf[0, 0] / (obs.R[0, 0] + Pf[0, 0])
                     Kg[1, 0] = Pf[1, 0] / (obs.R[0, 0] + Pf[0, 0])
 
@@ -125,17 +125,16 @@ class DA:
                     #     {xa}: 状態ベクトル(同化後の解析値) <Nx x 1>
                     #     {xf}: 状態ベクトル(同化前の予報値) <Nx x 1>
                     #     {y} : 観測値ベクトル               <No x 1>
-                    self.mdl.x[it] = self.mdl.x[it] + Kg[0, 0] * (obs.x[it_obs] - self.mdl.x[it])
-                    self.mdl.v[it] = self.mdl.v[it] + Kg[1, 0] * (obs.x[it_obs] - self.mdl.x[it])
+                    x_innov = obs.x[it_obs] - self.mdl.x[it]
+                    self.mdl.x[it] = self.mdl.x[it] + Kg[0, 0] * x_innov
+                    self.mdl.v[it] = self.mdl.v[it] + Kg[1, 0] * x_innov
 
                     # 解析誤差共分散行列[Pa] <Nx x Nx>
                     #   [Pa] = [Pf] - [K][H][Pf]
-                    Pa = Pf - Kg * obs.H * Pf
+                    Pa = Pf - Kg @ obs.H @ Pf
 
                     # 予報誤差共分散行列[Pf]の更新
                     Pf = Pa
-                    print(self.mdl.dt * it)
-                    print(Pa)
 
 
 if __name__ == '__main__':
