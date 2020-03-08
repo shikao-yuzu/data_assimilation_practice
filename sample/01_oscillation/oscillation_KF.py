@@ -28,7 +28,9 @@ class Model:
         self.PARAM_C = 0.3  # 減衰係数c
         self.PARAM_K = 0.5  # ばね剛性k
 
-        self.dt = dt                                      # 時間刻みdt
+        self.Nx = 2         # 自由度
+        self.dt = dt        # 時間刻みdt
+
         self.t = np.arange(0.0, (nt+1)*self.dt, self.dt)  # 時刻t
         self.x = np.zeros(nt+1, dtype=np.float64)         # 変位x
         self.v = np.zeros(nt+1, dtype=np.float64)         # 速度dx
@@ -65,7 +67,7 @@ class Model:
         '''
         状態遷移行列[M] <Nx x Nx>を作成する
         '''
-        M = np.zeros((2, 2), dtype=np.float64)
+        M = np.zeros((self.Nx, self.Nx), dtype=np.float64)
         M[0, 0] = 1.0
         M[0, 1] = self.dt
         M[1, 0] = - self.PARAM_K * self.dt / self.PARAM_M
@@ -75,8 +77,9 @@ class Model:
 
 class Observation:
     def __init__(self, R: np.ndarray, H: np.ndarray, t: np.ndarray, x: np.ndarray) -> None:
-        self.R = np.copy(R)  # 観測誤差共分散行列[R] <No x No>
-        self.H = np.copy(H)  # 観測行列[H] <No x Nx>
+        self.No = len(H)      # 観測点数
+        self.R  = np.copy(R)  # 観測誤差共分散行列[R] <No x No>
+        self.H  = np.copy(H)  # 観測行列[H] <No x Nx>
 
         self.t = np.array( [0.40, 0.80, 1.20, 1.60, 2.00, 2.40, 2.80, 3.20, 3.60, 4.00] )
         self.x = np.array( [5.229, 4.000, 3.971, 2.513, 1.432, 0.819, -0.197, -1.323, -1.824, -1.737] )
@@ -97,7 +100,7 @@ class DA:
         カルマンフィルタによるデータ同化
         '''
         # 予報誤差共分散行列[Pf] <Nx x Nx>の初期値
-        Pf = np.zeros((2, 2), dtype=np.float64)
+        Pf = np.zeros((self.mdl.Nx, self.mdl.Nx), dtype=np.float64)
         Pf[0, 0] = 1.0
         Pf[1, 1] = 1.0
 
@@ -116,7 +119,7 @@ class DA:
             for it_obs, t_obs in enumerate(obs.t):
                 if self.mdl.t[it] == t_obs:
                     # カルマンゲイン[K] <Nx x No>
-                    Kg = np.zeros((2, 1), dtype=np.float64)
+                    Kg = np.zeros((self.mdl.Nx, obs.No), dtype=np.float64)
                     Kg[0, 0] = Pf[0, 0] / (obs.R[0, 0] + Pf[0, 0])
                     Kg[1, 0] = Pf[1, 0] / (obs.R[0, 0] + Pf[0, 0])
 
@@ -146,12 +149,15 @@ if __name__ == '__main__':
     mdl_t.predict(1, NT_ASM+NT_PRD)
     t_t, x_t, v_t = mdl_t.output(OUTPUT_INTERVAL)
 
+    # 観測点数
+    No = 1
+
     # 観測誤差共分散行列[R] <No x No>
-    R = np.zeros((1, 1), dtype=np.float64)
+    R = np.zeros((No, No), dtype=np.float64)
     R[0, 0] = 0.1
 
     # 観測行列[H] <No x Nx>
-    H = np.zeros((1, 2), dtype=np.float64)
+    H = np.zeros((No, mdl_t.Nx), dtype=np.float64)
     H[0, 0] = 1.0
 
     # 観測値: 真値に正規乱数による誤差を加えたもの
